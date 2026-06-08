@@ -314,6 +314,37 @@
   /* EMPTY STATE */
   .empty-state { text-align:center; padding:40px; color:var(--text-muted); font-size:13px; }
 
+
+/* LOGIN */
+  #login-screen {
+    position:fixed; inset:0; background:#0F1117; z-index:999;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .login-box {
+    background:#1E2330; border-radius:var(--radius); padding:40px;
+    width:340px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4);
+  }
+  .login-logo {
+    width:48px; height:48px; background:var(--accent); border-radius:12px;
+    display:flex; align-items:center; justify-content:center; margin:0 auto 16px;
+  }
+  .login-title { font-size:20px; font-weight:600; color:white; margin-bottom:6px; }
+  .login-sub { font-size:13px; color:#8B8FA8; margin-bottom:24px; }
+  .login-input {
+    width:100%; padding:12px; border-radius:var(--radius-sm); border:1px solid #2E3347;
+    background:#0F1117; color:white; font-size:16px; text-align:center;
+    letter-spacing:6px; font-family:'DM Mono',monospace; outline:none; margin-bottom:12px;
+  }
+  .login-input:focus { border-color:var(--accent); }
+  .login-btn {
+    width:100%; padding:12px; background:var(--accent); color:white; border:none;
+    border-radius:var(--radius-sm); font-size:14px; font-weight:500;
+    font-family:'DM Sans',sans-serif; cursor:pointer; transition:all 0.15s;
+  }
+  .login-btn:hover { background:#3D5BD0; }
+  .login-error { color:#EF4444; font-size:12px; margin-top:8px; display:none; }
+
+
   /* SCROLLBAR */
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-track { background:transparent; }
@@ -321,6 +352,21 @@
 </style>
 </head>
 <body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24" fill="white" style="width:24px;height:24px"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm14 3a4 4 0 100-8 4 4 0 000 8z"/></svg>
+    </div>
+    <div class="login-title">GestApp</div>
+    <div class="login-sub">Entrez votre code d'accès</div>
+    <input class="login-input" type="password" id="pin-input" maxlength="6" placeholder="••••••" onkeydown="if(event.key==='Enter') checkPin()">
+    <button class="login-btn" onclick="checkPin()">Accéder</button>
+    <div class="login-error" id="login-error">Code incorrect. Réessayez.</div>
+  </div>
+</div>
+
 
 <!-- SIDEBAR -->
 <div id="sidebar">
@@ -1161,6 +1207,23 @@ function showToast(msg) {
   t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
 }
 
+// ==================== LOGIN ====================
+const APP_PIN = '1234'; // ← remplace par le code de ton ami
+
+function checkPin() {
+  const val = document.getElementById('pin-input').value;
+  const err = document.getElementById('login-error');
+  if (val === APP_PIN) {
+    document.getElementById('login-screen').style.display = 'none';
+    renderDashboard();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+  }
+}
+
+
 // ==================== EMAIL BILAN ====================
 const EMAILJS_SERVICE = 'service_e5ywolj';   // ← remplace par ton vrai Service ID
 const EMAILJS_TEMPLATE = 'template_q4cxboa'; // ← remplace par ton vrai Template ID
@@ -1450,7 +1513,7 @@ function seedDemo() {
 }
 
 seedDemo();
-renderDashboard();
+document.getElementById('login-screen').style.display = 'flex';
 </script>
 </body>
 </html>
