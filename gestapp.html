@@ -371,7 +371,7 @@
     <div class="user-avatar">AD</div>
     <div class="user-info">
       <div class="user-name">Cyrille</div>
-      <div class="user-role">Architecte</div>
+      <div class="user-role">M.I.K Architecte</div>
     </div>
   </div>
 </div>
@@ -590,9 +590,6 @@
     </div>
     <div class="form-grid">
       <div class="form-group full"><label>Adresse email destinataire *</label><input type="email" id="email-to" placeholder="votre@email.com"></div>
-      <div class="form-group full"><label>EmailJS — Service ID *</label><input type="text" id="email-service" placeholder="service_xxxxxxx"></div>
-      <div class="form-group full"><label>EmailJS — Template ID *</label><input type="text" id="email-template" placeholder="template_xxxxxxx"></div>
-      <div class="form-group full"><label>EmailJS — Public Key *</label><input type="text" id="email-pubkey" placeholder="aBcDeFgHiJkLmN"></div>
     </div>
     <p style="font-size:11px;color:var(--text-muted);margin-top:10px;">Ces informations sont sauvegardées localement et ne sont jamais partagées.</p>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;">
@@ -1165,12 +1162,13 @@ function showToast(msg) {
 }
 
 // ==================== EMAIL BILAN ====================
+const EMAILJS_SERVICE = 'service_e5ywolj';   // ← remplace par ton vrai Service ID
+const EMAILJS_TEMPLATE = 'template_q4cxboa'; // ← remplace par ton vrai Template ID
+const EMAILJS_PUBKEY = 'E1BPoqxAm51kZetbR';    // ← remplace par ta vraie Public Key
+
 function openEmailConfig() {
   const config = JSON.parse(localStorage.getItem('emailjs_config')||'{}');
   document.getElementById('email-to').value = config.to || '';
-  document.getElementById('email-service').value = config.service || '';
-  document.getElementById('email-template').value = config.template || '';
-  document.getElementById('email-pubkey').value = config.pubkey || '';
   document.getElementById('email-overlay').style.display = 'flex';
 }
 
@@ -1180,13 +1178,10 @@ function closeEmailConfig() {
 
 function sendBilan() {
   const to = document.getElementById('email-to').value.trim();
-  const service = document.getElementById('email-service').value.trim();
-  const template = document.getElementById('email-template').value.trim();
-  const pubkey = document.getElementById('email-pubkey').value.trim();
-  if (!to||!service||!template||!pubkey) return alert('Tous les champs sont obligatoires');
+  if (!to) return alert('Adresse email obligatoire');
 
-  // Sauvegarder config
-  localStorage.setItem('emailjs_config', JSON.stringify({to,service,template,pubkey}));
+  // Sauvegarder email destinataire
+  localStorage.setItem('emailjs_config', JSON.stringify({to}));
 
   const data = getData();
   const now = new Date();
@@ -1232,8 +1227,8 @@ function sendBilan() {
     dernieres_factures: dernieresFactures || 'Aucune facture'
   };
 
-  emailjs.init(pubkey);
-  emailjs.send(service, template, params)
+  emailjs.init(EMAILJS_PUBKEY);
+  emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, params)
     .then(() => {
       closeEmailConfig();
       showToast('Bilan envoyé avec succès !');
