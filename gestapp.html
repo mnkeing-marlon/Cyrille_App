@@ -652,6 +652,12 @@
     <button onclick="toggleNotifications()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--text-muted);">×</button>
   </div>
   <div id="notif-content" style="padding:12px 16px;"></div>
+    <div style="padding:10px 16px;border-top:1px solid var(--border);">
+      <button onclick="speakAlertes()" style="width:100%;padding:8px;border:1px solid var(--border);background:var(--bg);border-radius:var(--radius-sm);font-size:12px;color:var(--text-secondary);cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+        Rejouer le résumé vocal
+      </button>
+    </div>
 </div>
 <!-- MODAL EDITION -->
 <div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
@@ -919,12 +925,9 @@ function renderClients() {
         <div class="client-name">${cl.nom}</div>
         <div class="client-meta">${cl.contact||'—'}</div>
       </div>
-      <div class="client-badge">
-        <div style="font-size:11px;font-weight:600;color:var(--accent)">${projets.length} projet${projets.length>1?'s':''}</div>
-        <div style="font-size:10px;color:var(--text-muted)">${fmt(budget)}</div>
-      </div>
-      <button onclick="event.stopPropagation();openModal('client','${cl.id}')" style="border:none;background:none;color:var(--accent);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;margin-left:6px;">Modif.</button>
-    </div>`;
+       <button onclick="event.stopPropagation();openModal('client','${cl.id}')" style="border:none;background:none;color:var(--accent);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;margin-left:6px;">Modif.</button>
+       <button onclick="event.stopPropagation();deleteClient('${cl.id}')" style="border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-muted)'">Suppr.</button>    </div>
+      `;
   }).join('') || '<div class="empty-state">Aucun client — ajoutez-en dans Saisie</div>';
 
   if (selectedClientId) renderClientDetail(selectedClientId);
@@ -979,8 +982,9 @@ function renderProjectItem(p, data) {
           <div class="proj-amount"><div class="proj-amount-label">Facturé</div><div class="proj-amount-value" style="color:var(--green)">${fmt(total)}</div></div>
           <div class="proj-amount"><div class="proj-amount-label">Reste</div><div class="proj-amount-value" style="color:${reste>0?'var(--orange)':'var(--green)'}">${fmt(reste)}</div></div>
         </div>
-        <button onclick="event.stopPropagation();openModal('projet','${p.id}')" style="border:none;background:none;color:var(--accent);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;margin-right:6px;">Modif.</button>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-muted)" id="chev-${p.id}"><polyline points="6 9 12 15 18 9"/></svg>      </div>
+         <button onclick="event.stopPropagation();openModal('projet','${p.id}')" style="border:none;background:none;color:var(--accent);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;margin-right:6px;">Modif.</button>
+         <button onclick="event.stopPropagation();deleteProjet('${p.id}')" style="border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;margin-right:6px;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-muted)'">Suppr.</button>       
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-muted)" id="chev-${p.id}"><polyline points="6 9 12 15 18 9"/></svg>      </div>
       <div class="project-factures" id="pf-${p.id}">
         ${factures.length ? `<div style="font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Factures (${factures.length})</div>
         <div style="font-size:11px;display:grid;grid-template-columns:110px 1fr 150px;gap:4px;padding:4px 8px;color:var(--text-muted);font-weight:500"><span>Date</span><span>Description</span><span style="text-align:right">Montant</span></div>
@@ -1207,6 +1211,75 @@ function showToast(msg) {
   t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
 }
 
+// ==================== TEXT TO SPEECH ====================
+function speakAlertes() {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  setTimeout(() => {
+
+  const data = getData();
+  const hier = new Date();
+  hier.setDate(hier.getDate() - 1);
+  const hierStr = hier.toISOString().split('T')[0];
+  const parties = [];
+
+  // 1. ALERTES
+  const alertes = [];
+  data.projets.filter(p => p.statut === 'suspendu').forEach(p => {
+    const cl = data.clients.find(c => c.id === p.client_id);
+    alertes.push(`Projet suspendu : ${p.nom}${cl ? ', client ' + cl.nom : ''}.`);
+  });
+  data.projets.forEach(p => {
+    const total = getProjetTotalFactures(p.id);
+    if (total > Number(p.budget_prevu) && p.budget_prevu > 0) {
+      const cl = data.clients.find(c => c.id === p.client_id);
+      alertes.push(`Budget dépassé sur le projet ${p.nom}${cl ? ', client ' + cl.nom : ''}.`);
+    }
+  });
+  if (alertes.length) {
+    parties.push(`Vous avez ${alertes.length} alerte${alertes.length > 1 ? 's' : ''}. ${alertes.join(' ')}`);
+  } else {
+    parties.push('Aucune alerte aujourd\'hui.');
+  }
+
+  // 2. FACTURES DE LA VEILLE
+  const facsHier = data.factures.filter(f => f.date === hierStr);
+  if (!facsHier.length) {
+    parties.push('Aucune facture enregistrée hier.');
+  } else {
+    const totalFacs = facsHier.reduce((s, f) => s + Number(f.montant), 0);
+    const detailFacs = facsHier.map(f => {
+      const p = data.projets.find(pr => pr.id === f.projet_id);
+      const cl = p ? data.clients.find(c => c.id === p.client_id) : null;
+      const totalP = p ? getProjetTotalFactures(p.id) : 0;
+      const taux = p && Number(p.budget_prevu) > 0 ? Math.round(totalP / Number(p.budget_prevu) * 100) : 0;
+      return `Facture de ${Number(f.montant).toLocaleString('fr-FR')} francs CFA sur le projet ${p ? p.nom : 'inconnu'}, client ${cl ? cl.nom : 'inconnu'}, taux de complétion du projet : ${taux} pourcent.`;
+    }).join(' ');
+    parties.push(`${facsHier.length} facture${facsHier.length > 1 ? 's' : ''} enregistrée${facsHier.length > 1 ? 's' : ''} hier pour un total de ${totalFacs.toLocaleString('fr-FR')} francs CFA. ${detailFacs}`);
+  }
+
+  // 3. TRANSACTIONS DE LA VEILLE
+  const txHier = data.transactions.filter(t => t.date === hierStr);
+  if (!txHier.length) {
+    parties.push('Aucune transaction enregistrée hier.');
+  } else {
+    const entreesHier = txHier.filter(t => t.type === 'entrée');
+    const sortiesHier = txHier.filter(t => t.type === 'sortie');
+    const totalE = entreesHier.reduce((s, t) => s + Number(t.montant), 0);
+    const totalS = sortiesHier.reduce((s, t) => s + Number(t.montant), 0);
+    const detailTx = txHier.map(t => `${t.type === 'entrée' ? 'Entrée' : 'Sortie'} de ${Number(t.montant).toLocaleString('fr-FR')} francs CFA, catégorie ${t.categorie}.`).join(' ');
+    parties.push(`${txHier.length} transaction${txHier.length > 1 ? 's' : ''} hier. ${detailTx} Total entrées : ${totalE.toLocaleString('fr-FR')} francs CFA. Total sorties : ${totalS.toLocaleString('fr-FR')} francs CFA.`);
+  }
+
+  const texte = `Bonjour. ${parties.join(' ')}`;
+  const utterance = new SpeechSynthesisUtterance(texte);
+  utterance.lang = 'fr-FR';
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
+  }, 200);
+}
+
 // ==================== LOGIN ====================
 const APP_PIN = '1234'; // ← remplace par le code de ton ami
 
@@ -1214,9 +1287,10 @@ function checkPin() {
   const val = document.getElementById('pin-input').value;
   const err = document.getElementById('login-error');
   if (val === APP_PIN) {
-    document.getElementById('login-screen').style.display = 'none';
-    renderDashboard();
-  } else {
+      document.getElementById('login-screen').style.display = 'none';
+      renderDashboard();
+      setTimeout(() => speakAlertes(), 800);
+    } else {
     err.style.display = 'block';
     document.getElementById('pin-input').value = '';
     document.getElementById('pin-input').focus();
@@ -1346,6 +1420,40 @@ function renderNotifications() {
       <span style="font-size:12px;color:var(--text-primary);line-height:1.5">${a.msg}</span>
     </div>`).join('');
 }
+
+// ==================== SUPPRESSIONS ====================
+function deleteClient(id) {
+  const d = getData();
+  const cl = d.clients.find(c => c.id === id);
+  if (!cl) return;
+  const projets = d.projets.filter(p => p.client_id === id);
+  const nbFactures = projets.reduce((s, p) => s + d.factures.filter(f => f.projet_id === p.id).length, 0);
+  const msg = `Supprimer le client "${cl.nom}"${projets.length ? ', ses ' + projets.length + ' projet(s)' : ''}${nbFactures ? ' et ' + nbFactures + ' facture(s)' : ''} ? Action irréversible.`;
+  if (!confirm(msg)) return;
+  const projetIds = projets.map(p => p.id);
+  d.factures = d.factures.filter(f => !projetIds.includes(f.projet_id));
+  d.projets = d.projets.filter(p => p.client_id !== id);
+  d.clients = d.clients.filter(c => c.id !== id);
+  saveData(d);
+  selectedClientId = null;
+  showToast('Client supprimé avec succès');
+  renderClients();
+}
+
+function deleteProjet(id) {
+  const d = getData();
+  const p = d.projets.find(pr => pr.id === id);
+  if (!p) return;
+  const nbFactures = d.factures.filter(f => f.projet_id === id).length;
+  const msg = `Supprimer le projet "${p.nom}"${nbFactures ? ' et ses ' + nbFactures + ' facture(s)' : ''} ? Action irréversible.`;
+  if (!confirm(msg)) return;
+  d.factures = d.factures.filter(f => f.projet_id !== id);
+  d.projets = d.projets.filter(pr => pr.id !== id);
+  saveData(d);
+  showToast('Projet supprimé avec succès');
+  renderClients();
+}
+
 
 
 // ==================== MODAL EDITION ====================
