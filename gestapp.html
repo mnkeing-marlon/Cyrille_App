@@ -979,8 +979,8 @@ function renderProjectItem(p, data) {
           <div class="proj-amount"><div class="proj-amount-label">Facturé</div><div class="proj-amount-value" style="color:var(--green)">${fmt(total)}</div></div>
           <div class="proj-amount"><div class="proj-amount-label">Reste</div><div class="proj-amount-value" style="color:${reste>0?'var(--orange)':'var(--green)'}">${fmt(reste)}</div></div>
         </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-muted)" id="chev-${p.id}"><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
+        <button onclick="event.stopPropagation();openModal('projet','${p.id}')" style="border:none;background:none;color:var(--accent);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;margin-right:6px;">Modif.</button>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-muted)" id="chev-${p.id}"><polyline points="6 9 12 15 18 9"/></svg>      </div>
       <div class="project-factures" id="pf-${p.id}">
         ${factures.length ? `<div style="font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Factures (${factures.length})</div>
         <div style="font-size:11px;display:grid;grid-template-columns:110px 1fr 150px;gap:4px;padding:4px 8px;color:var(--text-muted);font-weight:500"><span>Date</span><span>Description</span><span style="text-align:right">Montant</span></div>
