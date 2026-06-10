@@ -619,11 +619,20 @@
             <div class="form-group"><label>Date *</label><input type="date" id="t-date"></div>
             <div class="form-group full"><label>Description</label><input type="text" id="t-desc" placeholder="Description"></div>
           </div>
-          <div class="form-actions"><button class="btn-submit" onclick="saveTransaction()">Ajouter la transaction</button></div>
+<div class="form-actions"><button class="btn-submit" onclick="saveTransaction()">Ajouter la transaction</button></div>
         </div>
       </div>
-    </div>
 
+      <div style="max-width:680px;margin-top:16px;">
+        <p style="font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Exports</p>
+        <div style="display:flex;gap:10px;">
+          <button onclick="exportCSV('factures')" class="btn-primary" style="background:var(--green);">Factures CSV</button>
+          <button onclick="exportCSV('transactions')" class="btn-primary" style="background:var(--blue);">Transactions CSV</button>
+          <button onclick="exportJSON()" class="btn-primary" style="background:var(--purple);">Tout JSON</button>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -1183,6 +1192,37 @@ function saveTransaction() {
   ['t-type','t-cat','t-montant','t-desc'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('t-date').value=new Date().toISOString().split('T')[0];
 }
+
+// ==================== EXPORT CSV ====================
+function exportCSV(type) {
+  const data = getData();
+  let rows = [], filename = '';
+
+  if (type === 'factures') {
+    filename = `factures_${new Date().toISOString().split('T')[0]}.csv`;
+    rows.push(['Date','Client','Projet','Description','Montant (FCFA)']);
+    data.factures.forEach(f => {
+      const p = data.projets.find(pr => pr.id === f.projet_id);
+      const cl = p ? data.clients.find(c => c.id === p.client_id) : null;
+      rows.push([f.date, cl?cl.nom:'—', p?p.nom:'—', f.description||'', f.montant]);
+    });
+  } else if (type === 'transactions') {
+    filename = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+    rows.push(['Date','Type','Catégorie','Description','Montant (FCFA)']);
+    data.transactions.forEach(t => {
+      rows.push([t.date, t.type, t.categorie, t.description||'', t.montant]);
+    });
+  }
+
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  showToast(`Export ${type} téléchargé`);
+}
+
 
 // ==================== IMPORT/EXPORT ====================
 function exportJSON() {
