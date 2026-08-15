@@ -629,6 +629,7 @@
           <button onclick="exportCSV('factures')" class="btn-primary" style="background:var(--green);">Factures CSV</button>
           <button onclick="exportCSV('transactions')" class="btn-primary" style="background:var(--blue);">Transactions CSV</button>
           <button onclick="exportJSON()" class="btn-primary" style="background:var(--purple);">Tout JSON</button>
+          <button onclick="resetData()" class="btn-primary" style="background:var(--red);">Vider les données</button>
         </div>
       </div>
 
@@ -1193,6 +1194,18 @@ function saveTransaction() {
   document.getElementById('t-date').value=new Date().toISOString().split('T')[0];
 }
 
+// ==================== RESET ====================
+function resetData() {
+  const msg = 'Vider TOUTES les données ? Clients, projets, factures et transactions seront supprimés. Cette action est irréversible.';
+  if (!confirm(msg)) return;
+  saveData({ clients:[], projets:[], factures:[], transactions:[] });
+  localStorage.setItem('gestion_app_reset', '1');
+  showToast('Toutes les données ont été supprimées');
+  refreshCurrentPage();
+}
+
+
+
 // ==================== EXPORT CSV ====================
 function exportCSV(type) {
   const data = getData();
@@ -1630,7 +1643,7 @@ function saveModal() {
 // Seed demo data if empty
 function seedDemo() {
   const d = getData();
-  if (d.clients.length) return;
+  if (d.clients.length || localStorage.getItem('gestion_app_reset')) return;
   const c1=uid(),c2=uid(),c3=uid();
   const p1=uid(),p2=uid(),p3=uid(),p4=uid();
   d.clients=[{id:c1,nom:'Kamer Tech',contact:'info@kamertech.cm'},{id:c2,nom:'Dupont SARL',contact:'dupont@sarl.fr'},{id:c3,nom:'Alpha Invest',contact:'contact@alpha.cm'}];
